@@ -9,11 +9,14 @@ public class PlayerController : MonoBehaviour
     private Rigidbody rb;
     private float movementX;
     private float movementY;
-    public float speed = 6;
-    public float jumppower = 6f;
+    public float speed = 8;
+    public float jumppower = 12f;
     private bool isGrounded = true;
     private float jumpBufferTime = 0.2f;
     private float lastJumpTime = -1f;
+
+    private int maxJumps = 2;
+    private int jumpCount = 0;
 
     void Start()
     {
@@ -21,7 +24,6 @@ public class PlayerController : MonoBehaviour
         rb.mass = 1f;
         rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
     }
-
 
     void Update()
     {
@@ -37,15 +39,16 @@ public class PlayerController : MonoBehaviour
 
     private void jumpBro()
     {
-        if(Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
             lastJumpTime = Time.time;
         }
 
-        if(isGrounded && Time.time - lastJumpTime <= jumpBufferTime)
+        if (Time.time - lastJumpTime <= jumpBufferTime && jumpCount < maxJumps)
         {
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z); // Reset Y velocity before jumping
             rb.AddForce(Vector3.up * jumppower, ForceMode.Impulse);
-            isGrounded = false;
+            jumpCount++;
             lastJumpTime = -1f;
         }
     }
@@ -61,6 +64,12 @@ public class PlayerController : MonoBehaviour
         if (collision.gameObject.CompareTag("Ground"))
         {
             isGrounded = true;
+            jumpCount = 0; // Reset jumps on touching ground
+        }
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+            // Lógica para recibir daño o morir
+            Die();
         }
     }
 
@@ -71,4 +80,15 @@ public class PlayerController : MonoBehaviour
             isGrounded = false;
         }
     }
+
+    public void Die()
+    {
+        Debug.Log("Jugador muerto");
+        transform.position = RespawnManager.Instance.GetCheckpoint();
+        rb.linearVelocity = Vector3.zero; // Resetea la velocidad
+    }
+
+    
+
+
 }
