@@ -11,7 +11,6 @@ public class PlayerController : MonoBehaviour
     private float movementY;
     public float speed = 8;
     public float jumppower = 12f;
-    private bool isGrounded = true;
     private float jumpBufferTime = 0.2f;
     private float lastJumpTime = -1f;
 
@@ -63,7 +62,6 @@ public class PlayerController : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Ground"))
         {
-            isGrounded = true;
             jumpCount = 0; // Reset jumps on touching ground
         }
         if (collision.gameObject.CompareTag("Enemy"))
@@ -75,10 +73,6 @@ public class PlayerController : MonoBehaviour
 
     private void OnCollisionExit(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            isGrounded = false;
-        }
     }
 
     public void Die()
