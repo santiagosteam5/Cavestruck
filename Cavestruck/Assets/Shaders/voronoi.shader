@@ -1,47 +1,45 @@
-Shader "Unlit/LavaVoronoi"
+Shader "URP/LavaVoronoiLit"
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
         _RockColor ("Rock Color", Color) = (0.3, 0.3, 0.3, 1)
-        _EdgeColor ("Edge Color", Color) = (1, 1, 0, 1)
-        _EmissionColor ("Emission Color", Color) = (1, 1, 0, 1)
+        _EdgeColor ("Edge Color", Color) = (1, 0.5, 0.0, 1)
         _EmissionIntensity ("Emission Intensity", Float) = 1.0
         _Speed ("Animation Speed", Float) = 1.0
         _CellDensity ("Cell Density", Float) = 5.0
         _EdgeThickness ("Edge Thickness", Float) = 0.1
         _LightDirection ("Light Direction", Vector) = (0, 1, 0, 0)
     }
+
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags { "RenderPipeline"="UniversalRenderPipeline" "RenderType"="Opaque" }
         LOD 100
 
         Pass
         {
+            Name "ForwardLit"
+            Tags { "LightMode"="UniversalForward" }
+
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            #include "UnityCG.cginc"
-
-            struct appdata
+            struct Attributes
             {
-                float4 vertex : POSITION;
+                float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
             };
 
-            struct v2f
+            struct Varyings
             {
+                float4 positionHCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
-                float4 vertex : SV_POSITION;
             };
 
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
             float4 _RockColor;
             float4 _EdgeColor;
-            float4 _EmissionColor;
             float4 _LightDirection;
             float _Speed;
             float _CellDensity;
@@ -69,7 +67,6 @@ Shader "Unlit/LavaVoronoi"
                     {
                         int2 cellToCheck = int2(x, y);
                         float2 cellOffset = float2(cellToCheck) - posInCell + randomVector(cell + cellToCheck, AngleOffset);
-
                         float distToPoint = dot(cellOffset, cellOffset);
 
                         if (distToPoint < DistFromCenter)
@@ -81,60 +78,53 @@ Shader "Unlit/LavaVoronoi"
                 }
 
                 DistFromEdge = 8.0f;
-
                 for (int y = -1; y <= 1; ++y)
                 {
                     for (int x = -1; x <= 1; ++x)
                     {
                         int2 cellToCheck = int2(x, y);
                         float2 cellOffset = float2(cellToCheck) - posInCell + randomVector(cell + cellToCheck, AngleOffset);
-
-                        float distToEdge = dot(0.5f * (closestOffset + cellOffset), normalize(cellOffset - closestOffset));
-
-                        DistFromEdge = min(DistFromEdge, distToEdge);
+                        float edgeDist = dot(0.5f * (closestOffset + cellOffset), normalize(cellOffset - closestOffset));
+                        DistFromEdge = min(DistFromEdge, edgeDist);
                     }
                 }
             }
 
-            v2f vert(appdata v)
+            Varyings vert(Attributes IN)
             {
-                v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                return o;
+                Varyings OUT;
+                OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.uv = IN.uv;
+                return OUT;
             }
 
-            fixed4 frag(v2f i) : SV_Target
+            half4 frag(Varyings IN) : SV_Target
             {
                 float time = _Time.y * _Speed;
-                float2 uv = i.uv;
+                float2 uv = IN.uv;
 
                 float distFromCenter, distFromEdge;
-                CustomVoronoi_float(uv + time, time, _CellDensity, distFromCenter, distFromEdge);
+                CustomVoronoi_float(uv + time, 4, _CellDensity, distFromCenter, distFromEdge);
 
-                distFromCenter = sqrt(distFromCenter) * 0.6;
-                distFromEdge = distFromEdge * 30;
+                distFromCenter = sqrt(distFromCenter) * 1.5;
+                distFromEdge = distFromEdge * 50;
 
                 float edgeFactor = smoothstep(0.0, _EdgeThickness, distFromEdge);
                 float centerFactor = 1.0 - smoothstep(0.0, 0.5, distFromCenter);
 
-                float3 normal = normalize(float3(
-                    distFromEdge - distFromCenter, // Diferencia entre bordes y centro
-                    1.0,                          // Altura simulada
-                    distFromCenter - distFromEdge  // Diferencia inversa
-                ));
-
+                float3 normal = normalize(float3(distFromEdge - distFromCenter, 1.0, distFromCenter - distFromEdge));
                 float3 lightDir = normalize(_LightDirection.xyz);
                 float lighting = max(0.0, dot(normal, lightDir));
 
                 float4 edgeColor = _EdgeColor * _EmissionIntensity;
 
-                float4 color = lerp(edgeColor, _RockColor, centerFactor);
-                color = lerp(edgeColor, color, edgeFactor);
+                float4 baseColor = lerp(edgeColor, _RockColor, centerFactor);
+                baseColor = lerp(edgeColor, baseColor, edgeFactor);
+                baseColor.rgb *= lighting;
 
-                color.rgb *= lighting;
+                float3 emission = edgeColor.rgb * (1.0 - edgeFactor);
 
-                return color;
+                return float4(baseColor.rgb + emission, 1.0);
             }
             ENDHLSL
         }

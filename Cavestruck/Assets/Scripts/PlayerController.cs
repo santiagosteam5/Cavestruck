@@ -17,8 +17,11 @@ public class PlayerController : MonoBehaviour
     private int maxJumps = 2;
     private int jumpCount = 0;
 
+    Animator animator;
+
     void Start()
     {
+        animator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
         rb.mass = 1f;
         rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
@@ -41,6 +44,7 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             lastJumpTime = Time.time;
+            animator.SetBool("isJumping", true);
         }
 
         if (Time.time - lastJumpTime <= jumpBufferTime && jumpCount < maxJumps)
@@ -55,6 +59,24 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         Vector3 targetVelocity = new Vector3(movementX * speed, rb.linearVelocity.y, 0.0f);
+
+        if (movementX != 0)
+        {
+            animator.SetBool("isMoving", true);
+            if (movementX > 0)
+            {
+                transform.rotation = Quaternion.Euler(0, 90, 0);
+            }
+            else
+            {
+                transform.rotation = Quaternion.Euler(0, -90, 0);
+            }
+        }
+        else
+        {
+            animator.SetBool("isMoving", false);
+        }
+
         rb.linearVelocity = targetVelocity;
     }
 
@@ -62,6 +84,7 @@ public class PlayerController : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Ground"))
         {
+            animator.SetBool("isJumping", false);
             jumpCount = 0; // Reset jumps on touching ground
         }
         if (collision.gameObject.CompareTag("Enemy"))
@@ -81,8 +104,4 @@ public class PlayerController : MonoBehaviour
         transform.position = RespawnManager.Instance.GetCheckpoint();
         rb.linearVelocity = Vector3.zero; // Resetea la velocidad
     }
-
-    
-
-
 }

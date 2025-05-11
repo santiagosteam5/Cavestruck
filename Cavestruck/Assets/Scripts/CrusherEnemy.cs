@@ -36,7 +36,7 @@ public class CubeEnemy : MonoBehaviour
         {
             col = gameObject.AddComponent<BoxCollider>();
         }
-
+        rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
         ConfigureRigidbody();
     }
 
