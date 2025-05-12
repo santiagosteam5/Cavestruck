@@ -1,4 +1,4 @@
-Shader "URP/LavaVoronoiLit"
+Shader "URP/voronoi"
 {
     Properties
     {
@@ -13,7 +13,7 @@ Shader "URP/LavaVoronoiLit"
 
     SubShader
     {
-        Tags { "RenderPipeline"="UniversalRenderPipeline" "RenderType"="Opaque" }
+        Tags { "RenderType"="Opaque" }
         LOD 100
 
         Pass
@@ -78,17 +78,18 @@ Shader "URP/LavaVoronoiLit"
                 }
 
                 DistFromEdge = 8.0f;
-                for (int y = -1; y <= 1; ++y)
+                for (int y2 = -1; y2 <= 1; ++y2)
                 {
-                    for (int x = -1; x <= 1; ++x)
+                    for (int x2 = -1; x2 <= 1; ++x2)
                     {
-                        int2 cellToCheck = int2(x, y);
+                        int2 cellToCheck = int2(x2, y2);
                         float2 cellOffset = float2(cellToCheck) - posInCell + randomVector(cell + cellToCheck, AngleOffset);
                         float edgeDist = dot(0.5f * (closestOffset + cellOffset), normalize(cellOffset - closestOffset));
                         DistFromEdge = min(DistFromEdge, edgeDist);
                     }
                 }
             }
+
 
             Varyings vert(Attributes IN)
             {
