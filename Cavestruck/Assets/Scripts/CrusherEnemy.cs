@@ -11,6 +11,7 @@ public class CubeEnemy : MonoBehaviour
     [SerializeField] private float cooldownTime = 1.0f;
     [SerializeField] private string playerTag = "Player";
     [SerializeField] private string groundTag = "Ground";
+    [SerializeField] private string enemyTag = "Enemy";
     [SerializeField] private float groundCheckOffset = 0.1f; // Pequeño offset para evitar flotación
 
     private Vector3 originalPosition;
@@ -94,7 +95,7 @@ public class CubeEnemy : MonoBehaviour
         // Verifica todos los puntos de contacto
         foreach (ContactPoint contact in collision.contacts)
         {
-            if (contact.otherCollider.CompareTag(groundTag))
+            if (contact.otherCollider.CompareTag(groundTag) || contact.otherCollider.CompareTag(enemyTag))
             {
                 HandleGroundCollision(contact.point);
                 return;

@@ -5,6 +5,7 @@ public class ControladorMenu : MonoBehaviour
 {
     public GameObject panelPausa;
     public GameObject panelSelector;
+    public GameObject menuPrincipal;
 
     private bool enPausa = false;
 
@@ -18,7 +19,6 @@ public class ControladorMenu : MonoBehaviour
                 Pausar();
         }
     }
-
     public void Pausar()
     {
         Time.timeScale = 0f;
@@ -34,10 +34,16 @@ public class ControladorMenu : MonoBehaviour
         enPausa = false;
     }
 
+    public void Empezar()
+    {
+        Time.timeScale = 1f;
+        menuPrincipal.SetActive(false);
+    }
+
     public void MostrarSelector()
     {
-        panelPausa.SetActive(false);
         panelSelector.SetActive(true);
+        panelPausa.SetActive(false);
     }
 
     public void OcultarSelector()
@@ -49,6 +55,7 @@ public class ControladorMenu : MonoBehaviour
     void OnEnable()
     {
         SceneManager.sceneLoaded += OcultarMenusAlCargar;
+
     }
 
     void OnDisable()
