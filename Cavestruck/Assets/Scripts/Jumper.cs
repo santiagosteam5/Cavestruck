@@ -9,9 +9,11 @@ public class Trampoline : MonoBehaviour
     [SerializeField] private float compressedScale = 0.5f;
     [SerializeField] private AudioClip bounceSound;
     [SerializeField] private ParticleSystem bounceParticles;
+     
+    private AudioSource audioSource;
 
     private Vector3 originalScale;
-    private AudioSource audioSource;
+    
     private bool isAnimating = false;
 
     private void Start()
@@ -43,6 +45,7 @@ public class Trampoline : MonoBehaviour
 
                 // Start animation
                 StartCoroutine(BounceAnimation());
+                if (bounceSound != null) audioSource.PlayOneShot(bounceSound);
             }
         }
     }

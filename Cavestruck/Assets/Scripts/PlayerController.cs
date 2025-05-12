@@ -14,8 +14,8 @@ public class PlayerController : MonoBehaviour
     private float jumpBufferTime = 0.2f;
     private float lastJumpTime = -1f;
 
-    private int maxJumps = 2;
     private int jumpCount = 0;
+    private int extraJumpsAvailable = 0;
 
     Animator animator;
 
@@ -47,11 +47,19 @@ public class PlayerController : MonoBehaviour
             animator.SetBool("isJumping", true);
         }
 
-        if (Time.time - lastJumpTime <= jumpBufferTime && jumpCount < maxJumps)
+        if (Time.time - lastJumpTime <= jumpBufferTime &&
+            (jumpCount == 0 || (jumpCount > 0 && extraJumpsAvailable > 0)))
         {
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z); // Reset Y velocity before jumping
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
             rb.AddForce(Vector3.up * jumppower, ForceMode.Impulse);
             jumpCount++;
+
+            // Si estï¿½ usando un salto extra
+            if (jumpCount > 1)
+            {
+                extraJumpsAvailable--;
+            }
+
             lastJumpTime = -1f;
         }
     }
@@ -63,14 +71,7 @@ public class PlayerController : MonoBehaviour
         if (movementX != 0)
         {
             animator.SetBool("isMoving", true);
-            if (movementX > 0)
-            {
-                transform.rotation = Quaternion.Euler(0, 90, 0);
-            }
-            else
-            {
-                transform.rotation = Quaternion.Euler(0, -90, 0);
-            }
+            transform.rotation = Quaternion.Euler(0, movementX > 0 ? 90 : -90, 0);
         }
         else
         {
@@ -85,23 +86,34 @@ public class PlayerController : MonoBehaviour
         if (collision.gameObject.CompareTag("Ground"))
         {
             animator.SetBool("isJumping", false);
-            jumpCount = 0; // Reset jumps on touching ground
+            jumpCount = 0;
+            extraJumpsAvailable = 0;
         }
         if (collision.gameObject.CompareTag("Enemy"))
         {
-            // Lógica para recibir daño o morir
             Die();
         }
     }
 
-    private void OnCollisionExit(Collision collision)
+    public bool JumpedThisFrame()
     {
+        return Input.GetKeyDown(KeyCode.Space) ||
+               (lastJumpTime != -1f && Time.time - lastJumpTime <= jumpBufferTime);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("PowerUp"))
+        {
+            extraJumpsAvailable = 1; // reinicia a 1, incluso si ya tiene un salto extra
+            Debug.Log("ï¿½Power-up de salto extra obtenido! (Un solo uso)");
+        }
     }
 
     public void Die()
     {
         Debug.Log("Jugador muerto");
         transform.position = RespawnManager.Instance.GetCheckpoint();
-        rb.linearVelocity = Vector3.zero; // Resetea la velocidad
+        rb.linearVelocity = Vector3.zero;
     }
 }
